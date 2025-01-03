@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript Obfuscator</title>
+  <!-- Link to Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Link to your custom styles -->
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body class="relative min-h-screen">
+
+  <!-- Background image -->
+  <div class="background"></div>
+
+  <!-- Navbar -->
+  <div class="navbar flex justify-between items-center p-4 bg-gray-800 text-white">
+    <div class="logo">JS Obfuscator</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container">
+    <div class="obfuscator-box">
+      <h1 class="text-center font-bold text-3xl mb-6">Obfuscate Your JavaScript Files</h1>
+
+      <!-- File Upload Section -->
+      <div class="file-upload-container text-center mb-6">
+        <input type="file" id="file-upload" multiple class="hidden" webkitdirectory directory />
+        <label for="file-upload" class="cursor-pointer py-2 px-4 border rounded-lg bg-blue-500 text-white">
+          Choose JavaScript Files
+        </label>
+        <p class="mt-2 text-gray-600">Only .js files will be processed.</p>
+        <p class="mt-2 text-gray-600">Note: Folders with many scripts may take longer to obfuscate.</p>
+      </div>
+
+      <!-- Obfuscate Button -->
+      <button class="w-full py-3 bg-blue-600 text-white rounded-md" id="obfuscate-btn" disabled>
+        Obfuscate Files
+      </button>
+
+      <!-- Result Section (Will show after obfuscation) -->
+      <div class="mt-6 hidden" id="result-section">
+        <p class="text-center text-lg text-gray-700 mb-4">Your obfuscated files are ready!</p>
+        <button class="w-full py-3 bg-green-600 text-white rounded-md" id="download-btn">
+          Download Obfuscated Files
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer (Created By Dead Studios) -->
+  <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-70 text-white text-center py-2">
+    <span>Created By <strong>Dead Studios</strong></span>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    const fileInput = document.getElementById('file-upload');
+    const obfuscateButton = document.getElementById('obfuscate-btn');
+    const resultSection = document.getElementById('result-section');
+    const downloadButton = document.getElementById('download-btn');
+    const filesArray = [];
+
+    fileInput.addEventListener('change', (event) => {
+        const files = Array.from(event.target.files).filter(file =>
+            file.name.endsWith('.js')
+        );
+        filesArray.length = 0;
+        filesArray.push(...files);
+        obfuscateButton.disabled = filesArray.length === 0;
+    });
+
+    obfuscateButton.addEventListener('click', async () => {
+        if (filesArray.length === 0) return;
+
+        obfuscateButton.disabled = true;
+        let counter = 0;
+        const formData = new FormData();
+        filesArray.forEach(file => {
+            formData.append('files', file);
+        });
+
+        // Update button text to show obfuscating progress
+        const updateButtonText = () => {
+            const texts = ['Obfuscating.', 'Obfuscating..', 'Obfuscating...', 'Obfuscating.', 'Obfuscating..', 'Obfuscating...'];
+            obfuscateButton.textContent = texts[counter % texts.length];
+            counter++;
+        };
+
+        // Interval to change button text
+        const interval = setInterval(updateButtonText, 500);
+
+        try {
+            const response = await fetch('http://localhost:3001/obfuscate', {
+                method: 'POST',
+                body: formData,
+            });
+
+            clearInterval(interval); // Stop the button text interval after completion
+
+            if (!response.ok) throw new Error('Obfuscation failed.');
+
+            const blob = await response.blob();
+            const downloadLink = URL.createObjectURL(blob);
+
+            downloadButton.onclick = () => {
+                const a = document.createElement('a');
+                a.href = downloadLink;
+                a.download = 'obfuscated-files.zip';
+                a.click();
+                URL.revokeObjectURL(downloadLink);
+            };
+
+            resultSection.classList.remove('hidden');
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred while processing your files.');
+        } finally {
+            obfuscateButton.disabled = false;
+            obfuscateButton.textContent = 'Obfuscate Files'; // Reset the button text
+        }
+    });
+  </script>
+</body>
+
+</html>
