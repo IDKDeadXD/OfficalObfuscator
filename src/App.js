@@ -34,7 +34,7 @@ function Home() {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/obfuscate', {
+      const response = await fetch('https://obfuscatorwebbackend.onrender.com/obfuscate', {
         method: 'POST',
         body: formData,
       });
